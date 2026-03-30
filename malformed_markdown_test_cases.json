@@ -1,0 +1,571 @@
+{
+  "description": "LLM 生成 Markdown 时常见的语法缺陷测试用例集",
+  "version": "1.0",
+  "categories": [
+    {
+      "category": "1. 加粗（Bold）缺陷",
+      "cases": [
+        {
+          "id": "bold-001",
+          "name": "左侧缺少一个星号",
+          "input": "这是一段 *加粗文本** 的内容",
+          "expected_fix": "这是一段 **加粗文本** 的内容",
+          "defect_type": "asymmetric"
+        },
+        {
+          "id": "bold-002",
+          "name": "右侧缺少一个星号",
+          "input": "这是一段 **加粗文本* 的内容",
+          "expected_fix": "这是一段 **加粗文本** 的内容",
+          "defect_type": "asymmetric"
+        },
+        {
+          "id": "bold-003",
+          "name": "右侧完全缺失闭合标记",
+          "input": "这是一段 **加粗文本 的内容",
+          "expected_fix": "这是一段 **加粗文本 的内容**",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "bold-004",
+          "name": "下划线风格加粗未闭合",
+          "input": "这是一段 __加粗文本 的内容",
+          "expected_fix": "这是一段 __加粗文本 的内容__",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "bold-005",
+          "name": "下划线风格加粗不对称（1对2）",
+          "input": "这是一段 _加粗文本__ 的内容",
+          "expected_fix": "这是一段 __加粗文本__ 的内容",
+          "defect_type": "asymmetric"
+        },
+        {
+          "id": "bold-006",
+          "name": "多段加粗第二处未闭合",
+          "input": "**第一处加粗** 正常文本 **第二处加粗",
+          "expected_fix": "**第一处加粗** 正常文本 **第二处加粗**",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "bold-007",
+          "name": "加粗标记之间多了空格",
+          "input": "这是 * *加粗文本* * 的内容",
+          "expected_fix": "这是 **加粗文本** 的内容",
+          "defect_type": "malformed"
+        }
+      ]
+    },
+    {
+      "category": "2. 斜体（Italic）缺陷",
+      "cases": [
+        {
+          "id": "italic-001",
+          "name": "右侧缺失闭合星号",
+          "input": "这是 *斜体文本 的内容",
+          "expected_fix": "这是 *斜体文本 的内容*",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "italic-002",
+          "name": "下划线风格斜体未闭合",
+          "input": "这是 _斜体文本 的内容",
+          "expected_fix": "这是 _斜体文本 的内容_",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "italic-003",
+          "name": "左侧多了一个星号（斜体写成了加粗开头）",
+          "input": "这是 **斜体文本* 的内容",
+          "expected_fix": "这是 *斜体文本* 的内容",
+          "defect_type": "asymmetric"
+        },
+        {
+          "id": "italic-004",
+          "name": "连续两段斜体第二段未闭合",
+          "input": "普通文本 *斜体* 后续文本 *又一段斜体",
+          "expected_fix": "普通文本 *斜体* 后续文本 *又一段斜体*",
+          "defect_type": "unclosed"
+        }
+      ]
+    },
+    {
+      "category": "3. 粗斜体（Bold+Italic）缺陷",
+      "cases": [
+        {
+          "id": "bolditalic-001",
+          "name": "右侧缺少星号（3对2）",
+          "input": "这是 ***粗斜体文本** 的内容",
+          "expected_fix": "这是 ***粗斜体文本*** 的内容",
+          "defect_type": "asymmetric"
+        },
+        {
+          "id": "bolditalic-002",
+          "name": "右侧缺少星号（3对1）",
+          "input": "这是 ***粗斜体文本* 的内容",
+          "expected_fix": "这是 ***粗斜体文本*** 的内容",
+          "defect_type": "asymmetric"
+        },
+        {
+          "id": "bolditalic-003",
+          "name": "右侧完全缺失",
+          "input": "这是 ***粗斜体文本 的内容",
+          "expected_fix": "这是 ***粗斜体文本 的内容***",
+          "defect_type": "unclosed"
+        }
+      ]
+    },
+    {
+      "category": "4. 删除线（Strikethrough）缺陷",
+      "cases": [
+        {
+          "id": "strike-001",
+          "name": "右侧缺失闭合标记",
+          "input": "这是 ~~删除线文本 的内容",
+          "expected_fix": "这是 ~~删除线文本 的内容~~",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "strike-002",
+          "name": "不对称（2对1）",
+          "input": "这是 ~~删除线文本~ 的内容",
+          "expected_fix": "这是 ~~删除线文本~~ 的内容",
+          "defect_type": "asymmetric"
+        },
+        {
+          "id": "strike-003",
+          "name": "不对称（1对2）",
+          "input": "这是 ~删除线文本~~ 的内容",
+          "expected_fix": "这是 ~~删除线文本~~ 的内容",
+          "defect_type": "asymmetric"
+        }
+      ]
+    },
+    {
+      "category": "5. 行内代码（Inline Code）缺陷",
+      "cases": [
+        {
+          "id": "code-001",
+          "name": "右侧缺失反引号",
+          "input": "请使用 `console.log 来调试",
+          "expected_fix": "请使用 `console.log` 来调试",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "code-002",
+          "name": "双反引号不对称（2对1）",
+          "input": "请使用 ``console.log` 来调试",
+          "expected_fix": "请使用 ``console.log`` 来调试",
+          "defect_type": "asymmetric"
+        },
+        {
+          "id": "code-003",
+          "name": "内容包含反引号导致混淆",
+          "input": "使用 `let x = `hello`` 来赋值",
+          "expected_fix": "使用 ``let x = `hello` `` 来赋值",
+          "defect_type": "malformed"
+        }
+      ]
+    },
+    {
+      "category": "6. 代码块（Code Block）缺陷",
+      "cases": [
+        {
+          "id": "codeblock-001",
+          "name": "缺少结尾闭合标记",
+          "input": "```javascript\nconst x = 1;\nconsole.log(x);",
+          "expected_fix": "```javascript\nconst x = 1;\nconsole.log(x);\n```",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "codeblock-002",
+          "name": "结尾反引号数量不匹配（3对2）",
+          "input": "```python\nprint('hello')\n``",
+          "expected_fix": "```python\nprint('hello')\n```",
+          "defect_type": "asymmetric"
+        },
+        {
+          "id": "codeblock-003",
+          "name": "开头反引号数量不足（2对3）",
+          "input": "``python\nprint('hello')\n```",
+          "expected_fix": "```python\nprint('hello')\n```",
+          "defect_type": "asymmetric"
+        },
+        {
+          "id": "codeblock-004",
+          "name": "嵌套代码块外层未闭合",
+          "input": "````markdown\n这里有个代码块：\n```js\nalert(1)\n```\n然后继续",
+          "expected_fix": "````markdown\n这里有个代码块：\n```js\nalert(1)\n```\n然后继续\n````",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "codeblock-005",
+          "name": "闭合标记后面有多余字符",
+          "input": "```js\nconst x = 1;\n```js",
+          "expected_fix": "```js\nconst x = 1;\n```",
+          "defect_type": "malformed"
+        }
+      ]
+    },
+    {
+      "category": "7. 链接（Link）缺陷",
+      "cases": [
+        {
+          "id": "link-001",
+          "name": "缺少右圆括号",
+          "input": "点击 [这里](https://example.com 查看详情",
+          "expected_fix": "点击 [这里](https://example.com) 查看详情",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "link-002",
+          "name": "缺少右方括号",
+          "input": "点击 [这里(https://example.com) 查看",
+          "expected_fix": "点击 [这里](https://example.com) 查看",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "link-003",
+          "name": "方括号和圆括号之间有空格",
+          "input": "点击 [这里] (https://example.com) 查看",
+          "expected_fix": "点击 [这里](https://example.com) 查看",
+          "defect_type": "malformed"
+        },
+        {
+          "id": "link-004",
+          "name": "URL 被截断",
+          "input": "点击 [这里](https://exam",
+          "expected_fix": "",
+          "defect_type": "truncated",
+          "note": "URL 不完整，通常应整体移除"
+        },
+        {
+          "id": "link-005",
+          "name": "圆括号和方括号顺序反了",
+          "input": "点击 (https://example.com)[这里] 查看",
+          "expected_fix": "点击 [这里](https://example.com) 查看",
+          "defect_type": "malformed"
+        },
+        {
+          "id": "link-006",
+          "name": "缺少圆括号部分（只有方括号）",
+          "input": "点击 [这里] 查看详情",
+          "expected_fix": "点击 [这里] 查看详情",
+          "defect_type": "incomplete",
+          "note": "可能是有意为之的引用链接，也可能是漏写了URL"
+        }
+      ]
+    },
+    {
+      "category": "8. 图片（Image）缺陷",
+      "cases": [
+        {
+          "id": "img-001",
+          "name": "缺少感叹号前缀",
+          "input": "[示意图](https://example.com/img.png)",
+          "expected_fix": "![示意图](https://example.com/img.png)",
+          "defect_type": "malformed",
+          "note": "会被渲染为链接而非图片"
+        },
+        {
+          "id": "img-002",
+          "name": "URL 未闭合",
+          "input": "![示意图](https://example.com/img.png",
+          "expected_fix": "![示意图](https://example.com/img.png)",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "img-003",
+          "name": "alt 文本方括号未闭合",
+          "input": "![示意图(https://example.com/img.png)",
+          "expected_fix": "![示意图](https://example.com/img.png)",
+          "defect_type": "unclosed"
+        }
+      ]
+    },
+    {
+      "category": "9. 标题（Heading）缺陷",
+      "cases": [
+        {
+          "id": "heading-001",
+          "name": "井号后缺少空格",
+          "input": "#这是标题",
+          "expected_fix": "# 这是标题",
+          "defect_type": "malformed"
+        },
+        {
+          "id": "heading-002",
+          "name": "井号数量超限（7个）",
+          "input": "####### 这是标题",
+          "expected_fix": "###### 这是标题",
+          "defect_type": "malformed",
+          "note": "Markdown 最多支持 6 级标题"
+        },
+        {
+          "id": "heading-003",
+          "name": "ATX 闭合标题不对称",
+          "input": "## 标题 ###",
+          "expected_fix": "## 标题 ##",
+          "defect_type": "asymmetric",
+          "note": "部分解析器能容忍，但严格来说不规范"
+        },
+        {
+          "id": "heading-004",
+          "name": "标题前没有空行导致不被识别",
+          "input": "上一段文字\n## 这是标题\n下一段文字",
+          "expected_fix": "上一段文字\n\n## 这是标题\n\n下一段文字",
+          "defect_type": "malformed",
+          "note": "某些严格的解析器要求标题前有空行"
+        }
+      ]
+    },
+    {
+      "category": "10. 列表（List）缺陷",
+      "cases": [
+        {
+          "id": "list-001",
+          "name": "有序列表编号混乱",
+          "input": "1. 第一项\n3. 第二项\n2. 第三项",
+          "expected_fix": "1. 第一项\n2. 第二项\n3. 第三项",
+          "defect_type": "malformed"
+        },
+        {
+          "id": "list-002",
+          "name": "列表符号后缺少空格",
+          "input": "-第一项\n-第二项\n-第三项",
+          "expected_fix": "- 第一项\n- 第二项\n- 第三项",
+          "defect_type": "malformed"
+        },
+        {
+          "id": "list-003",
+          "name": "混用不同列表符号",
+          "input": "- 第一项\n* 第二项\n+ 第三项",
+          "expected_fix": "- 第一项\n- 第二项\n- 第三项",
+          "defect_type": "inconsistent"
+        },
+        {
+          "id": "list-004",
+          "name": "子列表缩进不足",
+          "input": "- 第一项\n - 子项（只缩进了1个空格）",
+          "expected_fix": "- 第一项\n  - 子项",
+          "defect_type": "malformed"
+        }
+      ]
+    },
+    {
+      "category": "11. 表格（Table）缺陷",
+      "cases": [
+        {
+          "id": "table-001",
+          "name": "分隔行缺失",
+          "input": "| 名称 | 价格 |\n| 苹果 | 5元 |",
+          "expected_fix": "| 名称 | 价格 |\n| --- | --- |\n| 苹果 | 5元 |",
+          "defect_type": "incomplete"
+        },
+        {
+          "id": "table-002",
+          "name": "数据行列数少于表头",
+          "input": "| 名称 | 价格 | 产地 |\n| --- | --- | --- |\n| 苹果 | 5元 |",
+          "expected_fix": "| 名称 | 价格 | 产地 |\n| --- | --- | --- |\n| 苹果 | 5元 | |",
+          "defect_type": "malformed"
+        },
+        {
+          "id": "table-003",
+          "name": "缺少尾部管道符",
+          "input": "| 名称 | 价格\n| --- | ---\n| 苹果 | 5元",
+          "expected_fix": "| 名称 | 价格 |\n| --- | --- |\n| 苹果 | 5元 |",
+          "defect_type": "malformed"
+        },
+        {
+          "id": "table-004",
+          "name": "表格在流式输出中被截断（行中间）",
+          "input": "| 名称 | 价格 | 产地 |\n| --- | --- | --- |\n| 苹果 | 5元 | 山东 |\n| 香蕉 | 3元",
+          "expected_fix": "| 名称 | 价格 | 产地 |\n| --- | --- | --- |\n| 苹果 | 5元 | 山东 |\n| 香蕉 | 3元 | |",
+          "defect_type": "truncated"
+        }
+      ]
+    },
+    {
+      "category": "12. 引用块（Blockquote）缺陷",
+      "cases": [
+        {
+          "id": "quote-001",
+          "name": "大于号后缺少空格",
+          "input": ">这是引用内容",
+          "expected_fix": "> 这是引用内容",
+          "defect_type": "malformed"
+        },
+        {
+          "id": "quote-002",
+          "name": "多行引用中间行缺少标记",
+          "input": "> 第一行引用\n第二行引用\n> 第三行引用",
+          "expected_fix": "> 第一行引用\n> 第二行引用\n> 第三行引用",
+          "defect_type": "incomplete"
+        }
+      ]
+    },
+    {
+      "category": "13. 数学公式（LaTeX）缺陷",
+      "cases": [
+        {
+          "id": "math-001",
+          "name": "行内公式右侧缺失 $",
+          "input": "根据公式 $E=mc^2 可以得出",
+          "expected_fix": "根据公式 $E=mc^2$ 可以得出",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "math-002",
+          "name": "块级公式不对称（2对1）",
+          "input": "$$\nE = mc^2\n$",
+          "expected_fix": "$$\nE = mc^2\n$$",
+          "defect_type": "asymmetric"
+        },
+        {
+          "id": "math-003",
+          "name": "块级公式右侧完全缺失",
+          "input": "$$\n\\frac{a}{b} + \\sqrt{c}",
+          "expected_fix": "$$\n\\frac{a}{b} + \\sqrt{c}\n$$",
+          "defect_type": "unclosed"
+        }
+      ]
+    },
+    {
+      "category": "14. 复合/嵌套缺陷",
+      "cases": [
+        {
+          "id": "nested-001",
+          "name": "加粗内嵌斜体，斜体未闭合",
+          "input": "这是 **加粗和 *斜体** 文本",
+          "expected_fix": "这是 **加粗和 *斜体*** 文本",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "nested-002",
+          "name": "加粗内嵌行内代码，代码未闭合",
+          "input": "这是 **加粗和 `代码** 的内容",
+          "expected_fix": "这是 **加粗和 `代码`** 的内容",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "nested-003",
+          "name": "链接文本中包含未闭合加粗",
+          "input": "[**点击这里](https://example.com)",
+          "expected_fix": "[**点击这里**](https://example.com)",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "nested-004",
+          "name": "列表项中加粗未闭合",
+          "input": "- 第一项 **重要\n- 第二项\n- 第三项",
+          "expected_fix": "- 第一项 **重要**\n- 第二项\n- 第三项",
+          "defect_type": "unclosed"
+        },
+        {
+          "id": "nested-005",
+          "name": "标题中加粗和链接同时出现问题",
+          "input": "## **重要更新：[查看详情(https://example.com)",
+          "expected_fix": "## **重要更新：[查看详情](https://example.com)**",
+          "defect_type": "multiple"
+        },
+        {
+          "id": "nested-006",
+          "name": "引用块内多种格式同时未闭合",
+          "input": "> 这是 **加粗 和 *斜体 以及 `代码 的引用",
+          "expected_fix": "> 这是 **加粗** 和 *斜体* 以及 `代码` 的引用",
+          "defect_type": "multiple"
+        }
+      ]
+    },
+    {
+      "category": "15. 流式截断场景（Streaming Truncation）",
+      "cases": [
+        {
+          "id": "stream-001",
+          "name": "在加粗标记中间截断（只出现了一个 *）",
+          "input": "这是一段 *",
+          "expected_fix": "这是一段 *",
+          "defect_type": "truncated",
+          "note": "此时无法判断是斜体还是加粗的开始"
+        },
+        {
+          "id": "stream-002",
+          "name": "在代码块语言标识后截断",
+          "input": "```jav",
+          "expected_fix": "```jav\n```",
+          "defect_type": "truncated"
+        },
+        {
+          "id": "stream-003",
+          "name": "在链接 URL 中间截断",
+          "input": "详情请看 [文档](https://do",
+          "expected_fix": "",
+          "defect_type": "truncated",
+          "note": "URL 不完整，修复策略因库而异"
+        },
+        {
+          "id": "stream-004",
+          "name": "在表格行中间截断",
+          "input": "| 名称 | 价格 |\n| --- | --- |\n| 苹果 |",
+          "expected_fix": "| 名称 | 价格 |\n| --- | --- |\n| 苹果 | |",
+          "defect_type": "truncated"
+        },
+        {
+          "id": "stream-005",
+          "name": "在图片 alt 文本中截断",
+          "input": "![系统架构",
+          "expected_fix": "",
+          "defect_type": "truncated"
+        },
+        {
+          "id": "stream-006",
+          "name": "在块级公式中截断",
+          "input": "$$\nx = \\frac{-b \\pm \\sqrt{b^2",
+          "expected_fix": "$$\nx = \\frac{-b \\pm \\sqrt{b^2\n$$",
+          "defect_type": "truncated"
+        }
+      ]
+    },
+    {
+      "category": "16. 转义与特殊字符缺陷",
+      "cases": [
+        {
+          "id": "escape-001",
+          "name": "星号未转义导致误触发斜体",
+          "input": "计算 3*4*5 的结果",
+          "expected_fix": "计算 3\\*4\\*5 的结果",
+          "defect_type": "malformed",
+          "note": "3*4*5 中的 *4* 会被解析为斜体"
+        },
+        {
+          "id": "escape-002",
+          "name": "文件路径中下划线触发斜体",
+          "input": "文件位于 /home/user/my_project/my_file.txt",
+          "expected_fix": "文件位于 /home/user/my\\_project/my\\_file.txt",
+          "defect_type": "malformed",
+          "note": "某些解析器会把 _project/my_ 解析为斜体"
+        },
+        {
+          "id": "escape-003",
+          "name": "HTML 尖括号未转义",
+          "input": "使用 <script> 标签来引入",
+          "expected_fix": "使用 `<script>` 标签来引入",
+          "defect_type": "malformed",
+          "note": "可能被解析为真实 HTML 标签"
+        }
+      ]
+    }
+  ],
+  "statistics": {
+    "total_cases": 55,
+    "defect_types": {
+      "unclosed": "右侧闭合标记完全缺失",
+      "asymmetric": "左右标记符号数量不一致",
+      "malformed": "标记格式错误（如缺少空格、顺序错误等）",
+      "truncated": "流式输出中途截断",
+      "incomplete": "结构性元素缺少必要组成部分",
+      "inconsistent": "同类元素使用了不一致的标记风格",
+      "multiple": "同时存在多种缺陷"
+    }
+  }
+}

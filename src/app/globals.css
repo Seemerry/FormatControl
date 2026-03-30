@@ -1,0 +1,181 @@
+@import "tailwindcss";
+@source "../../src";
+
+:root {
+  --color-bg: #ffffff;
+  --color-fg: #171717;
+  --color-border: #e5e7eb;
+  --color-muted: #f3f4f6;
+  --color-muted-fg: #6b7280;
+  --color-primary: #2563eb;
+  --color-primary-fg: #ffffff;
+  --color-accent: #f0f9ff;
+  --color-danger: #ef4444;
+  --color-success: #22c55e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0a0a0a;
+    --color-fg: #ededed;
+    --color-border: #374151;
+    --color-muted: #1f2937;
+    --color-muted-fg: #9ca3af;
+    --color-primary: #3b82f6;
+    --color-primary-fg: #ffffff;
+    --color-accent: #0f172a;
+    --color-danger: #f87171;
+    --color-success: #4ade80;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Markdown rendering styles */
+.markdown-body {
+  font-size: 14px;
+  line-height: 1.7;
+  word-wrap: break-word;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-body h1 { font-size: 1.5em; border-bottom: 1px solid var(--color-border); padding-bottom: 0.3em; }
+.markdown-body h2 { font-size: 1.3em; border-bottom: 1px solid var(--color-border); padding-bottom: 0.3em; }
+.markdown-body h3 { font-size: 1.15em; }
+.markdown-body h4 { font-size: 1em; }
+
+.markdown-body p {
+  margin: 0.5em 0;
+}
+
+.markdown-body code {
+  background: var(--color-muted);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+.markdown-body pre {
+  background: var(--color-muted);
+  padding: 12px 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.85em;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid var(--color-primary);
+  padding-left: 12px;
+  margin: 0.5em 0;
+  color: var(--color-muted-fg);
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.markdown-body li {
+  margin: 0.25em 0;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5em 0;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--color-border);
+  padding: 6px 12px;
+  text-align: left;
+}
+
+.markdown-body th {
+  background: var(--color-muted);
+  font-weight: 600;
+}
+
+.markdown-body a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 1em 0;
+}
+
+.markdown-body del {
+  color: var(--color-muted-fg);
+}
+
+.markdown-body strong {
+  font-weight: 700;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-fg);
+}
+
+/* Blinking cursor for streaming */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.streaming-cursor::after {
+  content: "▊";
+  animation: blink 1s step-end infinite;
+  color: var(--color-primary);
+  font-weight: bold;
+}
