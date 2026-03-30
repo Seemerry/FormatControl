@@ -44,8 +44,8 @@
 ## 快速开始
 
 ```bash
-git clone <repo-url>
-cd FormatControl2
+git clone https://github.com/Seemerry/FormatControl.git
+cd FormatControl
 npm install
 
 # 配置语义修复模型（可选）
