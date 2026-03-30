@@ -115,11 +115,17 @@ function fixUnclosedInlineMath(line: string): string {
  * Must run before remend to prevent remend from replacing with streamdown:incomplete-link.
  */
 function fixUnclosedLinkUrl(line: string): string {
-  // Match [text](url-without-closing-paren followed by space+text or EOL
-  return line.replace(
+  // Match [text](url-without-closing-paren followed by space+text
+  line = line.replace(
     /\[([^\]]+)\]\((https?:\/\/[^\s)]+)(\s)/g,
     "[$1]($2)$3"
   );
+  // Match [text](url-without-closing-paren at end of line
+  line = line.replace(
+    /\[([^\]]+)\]\((https?:\/\/[^\s)]+)$/g,
+    "[$1]($2)"
+  );
+  return line;
 }
 
 /**
@@ -237,9 +243,11 @@ export function findAmbiguousPatterns(text: string): AmbiguousSegment[] {
     return before + line.substring(start, end) + after;
   };
 
-  // Track code block state to skip code content
+  // Track code block and math block state to skip content
   let inCode = false;
   let codeFence = "";
+  let inMath = false;
+  let mathCloseDelim = "";
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -252,6 +260,20 @@ export function findAmbiguousPatterns(text: string): AmbiguousSegment[] {
     } else {
       if (trimmed.startsWith(codeFence) && trimmed.slice(codeFence.length).trim() === "") {
         inCode = false; codeFence = "";
+      }
+      continue;
+    }
+
+    // Track math blocks — skip content inside
+    if (!inMath) {
+      if (trimmed === "$$" || trimmed === "\\[") {
+        inMath = true;
+        mathCloseDelim = trimmed === "$$" ? "$$" : "\\]";
+        continue;
+      }
+    } else {
+      if (trimmed === mathCloseDelim) {
+        inMath = false; mathCloseDelim = "";
       }
       continue;
     }
@@ -454,11 +476,37 @@ export function applyLLMFixes(
 function looksLikeMarkdownNotCode(line: string): boolean {
   const t = line.trimStart();
   return (
+    /^#{2,6}\s/.test(t) ||          // heading (## or more — single # could be a code comment)
     /^>\s?.+/.test(t) ||             // blockquote with content
     /^\|.+\|/.test(t) ||            // table row (pipes on both sides)
     /^\[.+\]\(/.test(t) ||          // link at start of line
     /^!\[/.test(t)                   // image
   );
+}
+
+/**
+ * Replace \(...\) and \[...\] inline math with placeholders to protect from formatting fixes.
+ * Returns [processed_line, restore_function].
+ */
+function protectInlineMath(line: string): [string, (s: string) => string] {
+  const placeholders: [string, string][] = [];
+  let idx = 0;
+  const replacer = (match: string) => {
+    const ph = `\x00IMATH${idx++}\x00`;
+    placeholders.push([ph, match]);
+    return ph;
+  };
+  let processed = line;
+  processed = processed.replace(/\\\(.*?\\\)/g, replacer);
+  processed = processed.replace(/\\\[.*?\\\]/g, replacer);
+  const restore = (s: string) => {
+    let r = s;
+    for (const [ph, orig] of placeholders) {
+      r = r.replace(ph, orig);
+    }
+    return r;
+  };
+  return [processed, restore];
 }
 
 /**
@@ -478,7 +526,10 @@ export function remendByBlocks(text: string): string {
   text = fixHeadingOverflow(text);
   text = fixBlockquoteSpacing(text);
   text = fixSpacedBoldMarkers(text);
-  text = text.split("\n").map(fixAsymmetricMarkers).join("\n");
+  text = text.split("\n").map(l => {
+    const [p, restore] = protectInlineMath(l);
+    return restore(fixAsymmetricMarkers(p));
+  }).join("\n");
   text = fixListMarkerSpacing(text);
   text = fixTableTrailingPipe(text);
   text = fixLinkBracketSpace(text);
@@ -493,6 +544,7 @@ export function remendByBlocks(text: string): string {
 
   let inMathBlock = false;
   let mathBlockLines: string[] = [];
+  let mathDelimiter = "";
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -500,25 +552,29 @@ export function remendByBlocks(text: string): string {
 
     // --- Math block tracking (must be before code block) ---
     if (!inCodeBlock && !inMathBlock) {
-      if (trimmed === "$$") {
+      if (trimmed === "$$" || trimmed === "\\[") {
         inMathBlock = true;
+        mathDelimiter = trimmed === "$$" ? "$$" : "\\[";
         mathBlockLines = [line];
         continue;
       }
     } else if (inMathBlock) {
-      if (trimmed === "$$") {
+      const closingDelim = mathDelimiter === "$$" ? "$$" : "\\]";
+      if (trimmed === closingDelim) {
         mathBlockLines.push(line);
         result.push(mathBlockLines.join("\n"));
         mathBlockLines = [];
         inMathBlock = false;
+        mathDelimiter = "";
         continue;
       }
-      if (trimmed === "$") {
+      if (mathDelimiter === "$$" && trimmed === "$") {
         // Fix asymmetric closing: $ → $$
         mathBlockLines.push("$$");
         result.push(mathBlockLines.join("\n"));
         mathBlockLines = [];
         inMathBlock = false;
+        mathDelimiter = "";
         continue;
       }
       mathBlockLines.push(line);
@@ -610,7 +666,8 @@ export function remendByBlocks(text: string): string {
 
   // Handle unclosed math block at end
   if (inMathBlock && mathBlockLines.length > 0) {
-    result.push(mathBlockLines.join("\n") + "\n$$");
+    const closingDelim = mathDelimiter === "\\[" ? "\\]" : "$$";
+    result.push(mathBlockLines.join("\n") + "\n" + closingDelim);
   }
 
   // Handle unclosed code block at end
@@ -625,7 +682,8 @@ export function remendByBlocks(text: string): string {
  * Apply per-line pre-processing, remend, then post-processing.
  */
 function applyLineFixes(line: string): string {
-  let processed = line;
+  const [protected_, restore] = protectInlineMath(line);
+  let processed = protected_;
   processed = fixUnclosedInlineMath(processed);
   processed = fixUnclosedLinkUrl(processed);
   processed = fixUnclosedImageUrl(processed);
@@ -635,5 +693,5 @@ function applyLineFixes(line: string): string {
   processed = fixNestedUnclosedCode(processed);
   processed = fixUnclosedInlineCode(processed);
   processed = remend(processed, { katex: false, inlineKatex: false });
-  return processed;
+  return restore(processed);
 }

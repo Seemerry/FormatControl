@@ -45,15 +45,17 @@ During streaming, the syntactic fix is displayed. After streaming completes, amb
 ### Key Modules
 
 - **`src/lib/remend-blocks.ts`** — Core repair logic. Three main exports:
-  - `remendByBlocks(text)` — Synchronous syntactic fixer. Pipeline: heading spacing → heading overflow cap → blockquote spacing → spaced bold markers → asymmetric marker fix → list spacing → table trailing pipes → link bracket spacing → per-line fixes (inline math, unclosed links/images, backtick asymmetry, nested unclosed markers, inline code) → `remend()`. Tracks code block and math block state across lines.
-  - `findAmbiguousPatterns(text)` — Detects 6 categories of syntactically ambiguous patterns (see `ambiguous-patterns.md` for the full list with regexes). Skips code block content.
+  - `remendByBlocks(text)` — Synchronous syntactic fixer. Pipeline: heading spacing → heading overflow cap → blockquote spacing → spaced bold markers → asymmetric marker fix (with inline math protection) → list spacing → table trailing pipes → link bracket spacing → per-line fixes (inline math, unclosed links/images, backtick asymmetry, nested unclosed markers, inline code) → `remend()`. Tracks code block and math block (`$$` and `\[...\]`) state across lines. `protectInlineMath()` shields `\(...\)` and inline `\[...\]` content from formatting fixers via null-byte placeholders.
+  - `findAmbiguousPatterns(text)` — Detects 6 categories of syntactically ambiguous patterns (see `ambiguous-patterns.md` for the full list with regexes). Skips code block and math block content.
   - `applyLLMFixes(syntacticResult, segments, fixes)` — Patches LLM-determined fixes into the syntactic result by replacing `syntacticFix` strings.
 
 - **`src/app/page.tsx`** — Main page component (client-side). Three-column layout: chat, raw markdown, fixed markdown. Manages streaming state, chat history, abort control, and the async LLM repair flow (`isRepairing` / `llmFixedMarkdown` / `repairError` states). Shows status badges for repair progress.
 
 - **`src/app/api/chat/route.ts`** — Server-side POST endpoint. Proxies to any OpenAI-compatible `/v1/chat/completions` endpoint with SSE streaming.
 
-- **`src/app/api/fix-ambiguous/route.ts`** — Server-side POST endpoint for semantic repair. Receives ambiguous segments with context, calls an LLM with a specialized prompt describing 6 ambiguity types, parses structured responses (`片段1：fix\n片段2：fix`), returns fixes mapped by segment ID. Uses `temperature: 0`.
+- **`src/app/api/fix-ambiguous/route.ts`** — Server-side POST endpoint for semantic repair (used internally by the demo page). Receives ambiguous segments with context, calls an LLM with a specialized prompt describing 6 ambiguity types, parses structured responses (`片段1：fix\n片段2：fix`), returns fixes mapped by segment ID. Uses `temperature: 0`.
+
+- **`src/app/api/repair/route.ts`** — Public API endpoint for external consumers. Accepts `POST { text, semantic? }`, returns `{ fixed, ambiguous_count, warning? }`. Reads LLM config from env vars (`REPAIR_API_URL`, `REPAIR_API_KEY`, `REPAIR_MODEL_ID`, `REPAIR_SEMANTIC_ENABLED`). Falls back to syntactic-only if LLM call fails.
 
 - **`src/lib/store.ts`** — TypeScript types (`ModelConfig`, `RepairModelConfig`, `ChatMessage`) and default configs.
 
@@ -72,4 +74,6 @@ During streaming, the syntactic fix is displayed. After streaming completes, amb
 - Both API routes work with any OpenAI-compatible endpoint, not just DeepSeek. Config is passed from client state per request.
 - `ambiguous-patterns.md` documents all 6 ambiguity categories with their regexes and trigger conditions.
 - The `remend` npm package handles unclosed bold/italic/strikethrough/code/links but has limitations (e.g., `$$` doubling, image deletion). Custom pre-processing in `remend-blocks.ts` works around these by fixing patterns before `remend()` sees them, and by passing `{ katex: false, inlineKatex: false }` to disable remend's math handling (math blocks are tracked separately).
+- LaTeX math is protected at two levels: block-level (`$$`/`\[...\]` tracked as state machines, content passed through untouched) and inline-level (`\(...\)` and same-line `\[...\]` replaced with null-byte placeholders before fixers run, restored after `remend()`). This prevents `remend` from treating `\[` as a link bracket or `_` inside math as italic.
+- The `looksLikeMarkdownNotCode` heuristic detects unclosed code block boundaries; it recognizes `##`+ headings (not `#` alone — that's a code comment in many languages), blockquotes, tables, links, and images.
 - Dark mode is supported via `prefers-color-scheme` CSS variables defined in `globals.css`.
